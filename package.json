@@ -1,0 +1,17 @@
+{
+  "name": "speedlog",
+  "private": true,
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "eslint-plugin-html": "8.2.1",
+    "espree": "11.2.0",
+    "globals": "17.13.0"
+  }
+}

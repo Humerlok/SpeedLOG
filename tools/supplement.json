@@ -1,0 +1,39 @@
+{
+ "CTRL": {
+  "d": "Attitude control oscillation monitor diagnostics",
+  "f": {
+   "RMSRollP": "LPF Root-Mean-Squared Roll Rate controller P gain",
+   "RMSRollD": "LPF Root-Mean-Squared Roll Rate controller D gain",
+   "RMSPitchP": "LPF Root-Mean-Squared Pitch Rate controller P gain",
+   "RMSPitchD": "LPF Root-Mean-Squared Pitch Rate controller D gain",
+   "RMSYaw": "LPF Root-Mean-Squared Yaw Rate controller P+D gain"
+  }
+ },
+ "ATT": {
+  "f": {
+   "ErrRP": "lowest estimated gyro drift error",
+   "ErrYaw": "difference between measured yaw and DCM yaw estimate"
+  }
+ },
+ "BARO": {
+  "f": {
+   "Health": "true if barometer is considered healthy"
+  }
+ },
+ "GPA": {
+  "f": {
+   "Und": "Undulation"
+  }
+ },
+ "PM": {
+  "f": {
+   "IntE": "Internal error mask; which internal errors have been detected",
+   "ErrC": "Internal error count; how many internal errors have been detected"
+  }
+ },
+ "XKF5": {
+  "f": {
+   "offset": "Estimated vertical position of the terrain relative to the nav filter zero datum"
+  }
+ }
+}

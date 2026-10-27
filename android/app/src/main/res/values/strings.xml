@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Speed Log</string>
+    <string name="png_saved">Image saved</string>
+    <string name="png_failed">Could not save the image</string>
+    <string name="file_saved">File saved</string>
+    <string name="file_failed">Could not save the file</string>
+</resources>

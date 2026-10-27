@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" id="themeColor" content="#fcfcfb">
+<title>Speed Log</title>
+<meta name="description" content="Lean, offline ArduPilot DataFlash log viewer. Plots only the fields you select.">
+<link rel="stylesheet" href="SpeedLog.css">
+<script src="modules/plotly.js/dist/plotly.min.js"></script>
+<script src="modules/build/floating-ui/dist/umd/popper.min.js"></script>
+<script src="modules/build/tippyjs/dist/tippy-bundle.umd.min.js"></script>
+<script src="modules/fft.js/dist/fft.js"></script>
+<script src="Libraries/LogHelpers.js"></script>
+<script src="Libraries/Array_Math.js"></script>
+<script src="Libraries/fft.js"></script>
+<script src="Libraries/Plotly_helpers.js"></script>
+<script src="Libraries/DecodeDevID.js"></script>
+<script src="Libraries/Param_Helpers.js"></script>
+<script src="descriptions.js"></script>
+<script src="i18n.js"></script>
+<script src="i18n_tools.js"></script>
+<script src="docs.js"></script>
+<script src="board_types.js"></script>
+<script src="markup.js"></script>
+<script src="hardware.js"></script>
+<script src="pid.js"></script>
+<script src="views.js"></script>
+<script src="chrome.js"></script>
+<!-- parser:start -->
+<script>
+// Development: the parser is an ES module. build.cjs replaces this block with the parser inlined as a classic
+// script so the built file works from file:// with no server.
+import('./modules/JsDataflashParser/parser.js').then((mod) => {
+    window.DataflashParser = mod.default
+    window.dispatchEvent(new Event('parser-ready'))
+}).catch((err) => {
+    window.parser_error = err
+    window.dispatchEvent(new Event('parser-error'))
+})
+</script>
+<!-- parser:end -->
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+    <button id="sideToggle" class="icon-btn" data-i18n-aria="top.sidebar" data-i18n-title="top.sidebar" aria-label="Toggle sidebar" title="Toggle sidebar" aria-controls="sidebar" hidden></button>
+    <div class="brand">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 17l5-6 4 4 5-8 4 5" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21h18" stroke="var(--text-muted)" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="brand-text">Speed <b>Log</b></span>
+    </div>
+    <nav id="viewTabs" class="viewtabs" role="tablist" data-i18n-aria="view.tabs" aria-label="Views" hidden>
+        <button class="viewtab active" role="tab" type="button" data-view="viewer"><span class="vt-long" data-i18n="view.viewer">Log Viewer</span><span class="vt-short" data-i18n="view.viewer_short">Log</span></button>
+        <button class="viewtab" role="tab" type="button" data-view="hardware"><span class="vt-long" data-i18n="view.hardware">Hardware Report</span><span class="vt-short" data-i18n="view.hardware_short">Hardware</span></button>
+        <button class="viewtab" role="tab" type="button" data-view="pid"><span class="vt-long" data-i18n="view.pid">PID Review</span><span class="vt-short" data-i18n="view.pid_short">PID</span></button>
+    </nav>
+    <button id="fileInfo" class="file-info" type="button" aria-haspopup="dialog" data-i18n-aria="file.details" data-i18n-title="file.details" aria-label="Log details" title="Log details" hidden>
+        <span id="fileName" class="file-name"></span>
+        <span id="fileMeta" class="file-meta"></span>
+    </button>
+    <div class="spacer"></div>
+    <button id="openBtn" class="btn open-btn" type="button" data-i18n-aria="top.open" data-i18n-title="top.open" aria-label="Open log" title="Open log">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 012-2h4l2 2.5h7a2 2 0 012 2v7.5a2 2 0 01-2 2h-13a2 2 0 01-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span class="btn-text" data-i18n="top.open">Open log</span>
+    </button>
+    <button id="langBtn" class="btn ghost lang-btn" type="button" aria-label="Language" title="Language">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 12h17M12 3.5c2.5 2.4 3.6 5.2 3.6 8.5s-1.1 6.1-3.6 8.5c-2.5-2.4-3.6-5.2-3.6-8.5s1.1-6.1 3.6-8.5z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span id="langCode" class="btn-text">EN</span>
+    </button>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="Theme" title="Theme"></button>
+    <button id="overflowBtn" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="overflowMenu" data-i18n-aria="top.more" data-i18n-title="top.more" aria-label="More" title="More" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="18.5" r="1.7" fill="currentColor"/></svg>
+    </button>
+    <div id="overflowMenu" class="menu" role="menu" hidden>
+        <button id="menuLang" class="menu-item" role="menuitem" type="button"></button>
+        <button id="menuTheme" class="menu-item" role="menuitem" type="button"></button>
+        <button id="menuDetails" class="menu-item" role="menuitem" type="button" data-i18n="file.details">Log details</button>
+        <button id="menuHelp" class="menu-item" role="menuitem" type="button" data-i18n="help.title">Keyboard shortcuts</button>
+    </div>
+    <input id="fileInput" type="file" accept=".bin,.param,.parm" hidden>
+</header>
+<button id="focusHandle" class="focus-handle" type="button" data-i18n-aria="focus.exit" data-i18n-title="focus.exit" aria-label="Show the toolbars" title="Show the toolbars" hidden></button>
+
+<main id="welcome" class="welcome">
+    <div id="dropCard" class="drop-card" tabindex="0" role="button" data-i18n-aria="welcome.aria" aria-label="Choose a DataFlash log to open">
+        <svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><path d="M6 34l10-12 8 8 10-16 8 10" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 42h36" stroke="var(--text-muted)" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <h1><span class="only-fine" data-i18n="welcome.title">Drop a DataFlash log here</span><span class="only-coarse" data-i18n="welcome.title_touch">Choose a log</span></h1>
+        <p class="only-fine" data-i18n-html="welcome.sub">or click to browse for a <code>.bin</code> file</p>
+        <p class="only-coarse" data-i18n-html="welcome.sub_touch">Tap the button below to pick a <code>.bin</code> file</p>
+        <button id="welcomeOpen" class="btn primary big only-coarse" type="button" data-i18n="welcome.open">Open log</button>
+        <ul class="points">
+            <li data-i18n="welcome.p1">Runs entirely in your browser, nothing is uploaded</li>
+            <li data-i18n="welcome.p2">Works offline</li>
+            <li data-i18n="welcome.p3">Plots only the fields you pick</li>
+        </ul>
+        <p class="note only-fine" data-i18n-html="welcome.param">Also opens <code>.param</code> files (Hardware Report only)</p>
+    </div>
+</main>
+
+<div id="app" class="app" hidden>
+    <aside id="sidebar" class="sidebar" data-i18n-aria="side.aria" aria-label="Message types and fields">
+        <div class="side-top">
+            <label class="target">
+                <span class="target-label" data-i18n="side.target">Fields go to</span>
+                <select id="targetPanel" data-i18n-aria="side.target_aria" aria-label="Panel that receives the ticked fields"></select>
+            </label>
+            <button id="sideClose" class="icon-btn" type="button" data-i18n-aria="side.close" data-i18n-title="side.close" aria-label="Close" title="Close">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <div class="side-head">
+            <div class="search">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <input id="search" type="search" data-i18n-placeholder="side.search" data-i18n-aria="side.search_aria" placeholder="Search messages and fields" autocomplete="off" spellcheck="false" aria-label="Search messages, fields and descriptions">
+                <kbd id="searchKbd" class="kbd" aria-hidden="true">/</kbd>
+                <button id="searchClear" class="search-clear" type="button" data-i18n-aria="side.clear" data-i18n-title="side.clear" aria-label="Clear search" title="Clear search" hidden>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="side-row">
+                <div id="sideSummary" class="side-summary"></div>
+                <label class="check small" data-i18n-title="side.desc_title" title="Show a description under each field"><input id="descToggle" type="checkbox"> <span data-i18n="side.desc">Descriptions</span></label>
+            </div>
+        </div>
+        <div id="tree" class="tree" role="tree"></div>
+    </aside>
+    <div id="resizer" class="resizer" role="separator" aria-orientation="vertical" data-i18n-aria="side.resize" aria-label="Resize sidebar"></div>
+
+    <section class="workspace">
+        <div class="wbar" id="wbar">
+            <div class="tabs" role="tablist">
+                <button class="tab active" role="tab" data-tab="plots" aria-selected="true" data-i18n="tab.plots">Plots</button>
+                <button class="tab" role="tab" data-tab="params" aria-selected="false"><span data-i18n="tab.params">Parameters</span> <span id="paramCount" class="count"></span></button>
+                <button class="tab" role="tab" data-tab="msgs" aria-selected="false"><span data-i18n="tab.msgs">Messages</span> <span id="msgCount" class="count"></span></button>
+            </div>
+            <div id="plotTools" class="plot-tools">
+                <label id="modesSwitch" class="switch" data-i18n-title="plot.modes_title" title="Shade the background by flight mode">
+                    <input id="modesToggle" type="checkbox" data-i18n-aria="plot.modes_title" aria-label="Shade the background by flight mode" checked>
+                    <span class="track"><span class="thumb"></span></span>
+                    <svg class="switch-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h5v14H4zM9 5h6v14H9zM15 5h5v14h-5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                    <span class="switch-label" data-i18n="plot.modes">Flight modes</span>
+                </label>
+                <button id="resetZoom" class="btn ghost tool-btn" type="button" data-i18n-title="plot.reset_title" data-i18n-aria="plot.reset_title" title="Reset zoom on all panels" aria-label="Reset zoom on all panels">
+                    <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 107.5-7.5c-2.2 0-4.2.9-5.6 2.4L4.5 9M4.5 4v5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="btn-text" data-i18n="plot.reset">Reset zoom</span>
+                </button>
+                <button id="presetsBtn" class="btn ghost tool-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="presetsMenu" data-i18n-title="plot.presets_title" data-i18n-aria="plot.presets_title" title="Build panels from a preset" aria-label="Build panels from a preset">
+                    <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span class="btn-text" data-i18n="plot.presets">Presets</span>
+                </button>
+                <div id="presetsMenu" class="menu" role="menu" hidden></div>
+                <button id="focusBtn" class="btn ghost tool-btn" type="button" data-i18n-title="focus.enter" data-i18n-aria="focus.enter" title="Focus mode: hide the toolbars" aria-label="Focus mode: hide the toolbars">
+                    <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="btn-text" data-i18n="focus.label">Focus</span>
+                </button>
+                <button id="addPanel" class="btn primary tool-btn" type="button" data-i18n-title="plot.add_title" data-i18n-aria="plot.add_title" title="Add a panel" aria-label="Add a panel">
+                    <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <span class="btn-text" data-i18n="plot.add">Panel</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="panePlots" class="pane" role="tabpanel">
+            <div id="modeLegend" class="mode-legend" hidden></div>
+            <div id="panels" class="panels"></div>
+            <div id="readout" class="readout" role="status" hidden>
+                <div class="readout-time"></div>
+                <div class="readout-items"></div>
+                <button class="readout-close icon-btn" type="button" data-i18n-aria="readout.close" data-i18n-title="readout.close" aria-label="Close the readout" title="Close the readout">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+        </div>
+        <div id="paneParams" class="pane" role="tabpanel" hidden>
+            <div class="table-tools">
+                <input id="paramSearch" type="search" data-i18n-placeholder="param.filter" data-i18n-aria="param.filter" placeholder="Filter parameters" autocomplete="off" spellcheck="false" aria-label="Filter parameters">
+                <label class="chip-toggle"><input id="paramChanged" type="checkbox"><span data-i18n="param.changed">Only changed during the log</span></label>
+            </div>
+            <div id="paramTable" class="table-wrap"></div>
+        </div>
+        <div id="paneMsgs" class="pane" role="tabpanel" hidden>
+            <div class="table-tools">
+                <input id="msgSearch" type="search" data-i18n-placeholder="msg.filter" data-i18n-aria="msg.filter" placeholder="Filter messages" autocomplete="off" spellcheck="false" aria-label="Filter messages">
+                <div id="msgKinds" class="kinds"></div>
+            </div>
+            <div id="msgTable" class="table-wrap"></div>
+        </div>
+    </section>
+</div>
+<div id="sideScrim" class="side-scrim" hidden></div>
+
+<section id="toolHardware" class="app tool" hidden>
+    <aside class="sidebar" data-i18n-aria="side.sections" aria-label="Sections">
+        <div class="tool-side-body"><nav id="hwNav" class="tool-nav" data-i18n-aria="side.sections" aria-label="Sections"></nav></div>
+    </aside>
+    <div class="resizer"></div>
+    <section class="workspace"><div class="pane">
+        <div id="hwEmpty" class="tool-empty" data-i18n="tool.pick" hidden>Choose a section in the sidebar</div>
+        <div id="hwRoot" class="tool-body"></div>
+    </div></section>
+</section>
+<section id="toolPid" class="app tool" hidden>
+    <aside class="sidebar" data-i18n-aria="side.sections" aria-label="Sections">
+        <div class="tool-side-body"><nav id="pidNav" class="tool-nav" data-i18n-aria="side.sections" aria-label="Sections"></nav></div>
+    </aside>
+    <div class="resizer"></div>
+    <section class="workspace"><div class="pane">
+        <details id="pidSetupBox" class="setup-card" open>
+            <summary><span class="setup-title" data-i18n="pid.setup">Setup</span><span id="pidSetupSummary" class="setup-summary"></span></summary>
+            <div id="pidSetup" class="tool-setup"></div>
+        </details>
+        <div id="pidEmpty" class="tool-empty" data-i18n="tool.pick" hidden>Choose a section in the sidebar</div>
+        <div id="pidRoot" class="tool-body"></div>
+    </div></section>
+</section>
+
+<div id="overlay" class="overlay" hidden role="alert" aria-live="assertive">
+    <div class="overlay-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <div id="overlayText" class="overlay-text" data-i18n="load.loading">Loading…</div>
+        <div id="overlayDetail" class="overlay-detail" hidden></div>
+        <div id="overlayBar" class="bar"><i></i></div>
+        <div id="overlayWarn" class="overlay-warn" data-i18n="load.big" hidden>Large files can take a while and use a lot of memory on a phone.</div>
+    </div>
+</div>
+<div id="dragVeil" class="drag-veil" hidden><div data-i18n-html="drop.veil">Drop the <code>.bin</code> log to open it</div></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden><span id="toastText"></span><button id="toastAction" class="toast-action" type="button" hidden></button></div>
+
+<div id="fileSheet" class="sheet-wrap" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fileSheetTitle">
+        <div class="sheet-head">
+            <h2 id="fileSheetTitle" data-i18n="file.details">Log details</h2>
+            <button class="icon-btn" type="button" data-close data-i18n-aria="side.close" data-i18n-title="side.close" aria-label="Close" title="Close">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <dl id="fileDetails" class="details"></dl>
+    </div>
+</div>
+<div id="helpSheet" class="sheet-wrap" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpSheetTitle">
+        <div class="sheet-head">
+            <h2 id="helpSheetTitle" data-i18n="help.title">Keyboard shortcuts</h2>
+            <button class="icon-btn" type="button" data-close data-i18n-aria="side.close" data-i18n-title="side.close" aria-label="Close" title="Close">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <dl id="helpList" class="details shortcuts"></dl>
+    </div>
+</div>
+
+<script src="SpeedLog.js"></script>
+</body>
+</html>

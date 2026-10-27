@@ -1,0 +1,18 @@
+node_modules/
+
+# Local deployment backups
+backup/
+
+# Single-file build and APK copies
+dist/
+
+# Android build output (android/.gitignore covers the rest)
+android/app/build/
+android/build/
+android/.gradle/
+
+# Sample logs (large, never commit)
+*.BIN
+*.bin
+
+.vscode/*
