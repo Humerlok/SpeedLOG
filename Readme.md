@@ -49,6 +49,15 @@ node build.cjs
 
 Open `dist/SpeedLog.html` in a browser. The file has the parser, Plotly and the styles inlined (about 5 MB), so it can be copied anywhere and used with no network. `dist/` is git-ignored.
 
+### On a web server (installable app, PWA)
+
+`node build.cjs` also writes `site/` (git-ignored): the page as one `index.html`, `sw.js` (service worker), `manifest.webmanifest` and `images/`. Upload the whole folder to any static web server, in the root or in a subfolder. Over **HTTPS** (or `localhost`) the browser then offers to install Speed Log as an app (Chrome, Edge: install icon in the address bar; Android Chrome: "Install app"; iOS Safari: Share, "Add to Home Screen"), and after the first visit it opens and works offline. Nothing is uploaded anywhere: logs are read in the browser.
+
+- The service worker is cache first, so the app opens at once. A new version is downloaded in the background and used the next time the app is opened (close and reopen it). Each build gets its own cache version (a hash of the page), so the old files are dropped by themselves.
+- Keep `sw.js`, `manifest.webmanifest` and `images/` next to `index.html`; the paths are relative.
+- The service worker is registered only in the built page, never in development (a cache would hide your edits) and not inside the Android app.
+- The icons in `images/` (`icon.svg`, PNGs for 192, 512, maskable and Apple touch) draw the same chart as the Android launcher icon.
+
 ### From the repo (development)
 
 Serve the repo root and open `http://127.0.0.1:8000/`:
@@ -110,4 +119,4 @@ Setup is only `npm ci` (Node 22.13 or newer), and only for the linter: `npm run 
 - `build.cjs`: produces the single-file build. It needs `parser.js` to end with `export default DataflashParser` and fails with a clear message if that changes.
 - `Libraries/`: shared helpers (`LogHelpers.js` for vehicle/board info and message types, math, FFT and Plotly helpers, device-ID decoding, parameter helpers).
 - `modules/`: the third-party libraries, vendored as the single built file the app loads (Plotly, fft.js, Popper, tippy.js, the DataFlash parser). See `modules/Readme.md`.
-- `images/`: the one icon the tool views use.
+- `images/`: the icon the tool views use and the app icons (PWA). `manifest.webmanifest` and `sw.js` are the PWA files; `build.cjs` copies them to `site/`.

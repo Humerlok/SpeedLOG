@@ -48,7 +48,7 @@ const libraryGlobals = (src) => LIBRARY_GLOBALS[Object.keys(LIBRARY_GLOBALS).fin
 function htmlPages(dir) {
   const out = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (['.git', 'node_modules', 'modules', 'backup', 'dist', 'android'].includes(entry.name)) continue
+    if (['.git', 'node_modules', 'modules', 'backup', 'dist', 'android', 'site'].includes(entry.name)) continue
     const path = join(dir, entry.name)
     if (entry.isDirectory()) out.push(...htmlPages(path))
     else if (entry.name.endsWith('.html')) out.push(path)
@@ -150,6 +150,7 @@ export default [
       'backup/**', // local deployment backups
       // Speed Log: build output and generated data
       'dist/**',
+      'site/**',
       'android/**/build/**',
       'descriptions.js',
       'markup.js',
