@@ -16,3 +16,8 @@ android/.gradle/
 *.bin
 
 .vscode/*
+
+# Android signing secrets
+android/keystore.properties
+*.jks
+*.keystore

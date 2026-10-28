@@ -61,7 +61,7 @@ The parser is an ES module, which browsers refuse to load from `file://`. That i
 
 ## Android app
 
-`android/` is a small Android project that bundles the single-file build in a WebView, so the app is the same UI and works offline. It asks for no permissions at all (not even `INTERNET`): the page is served from the APK itself and logs are picked with the system file picker. Saved images go through the system "create document" dialog.
+`android/` is a small Android project that bundles the single-file build in a WebView, so the app is the same UI and works offline. It asks for no permissions at all (not even `INTERNET`; the only entry in the manifest is the internal signature-level one AndroidX adds itself): the page is served from the APK itself and logs are picked with the system file picker. Saved images go through the system "create document" dialog.
 
 Requirements: Android Studio (it brings JDK 17 and Gradle), or JDK 17, Gradle 8.7+ and the Android SDK (platform 34) for the command line. Android 8.0 (API 26) or newer.
 
@@ -76,7 +76,13 @@ gradle assembleDebug                # first run: gradle wrapper --gradle-version
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The Gradle build copies `dist/SpeedLog.html` into the APK assets and fails with a clear message if you forgot to run `build.cjs`. Rebuild the web app, then the APK, after changing any web file. The application id is `app.logviewerlite` (kept from the former name); change it in `app/build.gradle.kts` before distributing.
+The Gradle build copies `dist/SpeedLog.html` into the APK assets and fails with a clear message if you forgot to run `build.cjs`. Rebuild the web app, then the APK, after changing any web file. The application id is `aero.speedbird.speedlog` (the Kotlin package is still `app.logviewerlite`, which is independent of it). Changing the id later makes an installed copy impossible to update: the user would have to uninstall it first.
+
+### Release APK (for end users)
+
+`gradle assembleRelease` produces `app/build/outputs/apk/release/app-release.apk`, signed with the release key. Android refuses unsigned APKs, and every update must be signed with the same key, so keep the keystore and its password safe (a backup outside the machine): if they are lost, users have to uninstall before they can install a new version.
+
+The signing data is read from `android/keystore.properties` (git-ignored, like `*.jks`): `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. The key used so far is `~/.speedlog-signing/speedlog-release.jks` (alias `speedlog`, valid for 10000 days). Without that file the release build is left unsigned. Raise `versionCode` (and `versionName`) in `app/build.gradle.kts` for each version you hand out, otherwise Android will not accept it as an update. The APK is copied to `dist/SpeedLog-<versionName>.apk` by hand; `dist/` is git-ignored.
 
 Not yet verified on a device or emulator: pinch zoom, touch panning and scrolling past a plot with a finger.
 

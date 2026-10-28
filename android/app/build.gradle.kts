@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+// Release signing: android/keystore.properties (git-ignored) with storeFile, storePassword, keyAlias, keyPassword.
+// Without it the release build is left unsigned.
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 // The web app is the single-file build from `node build.cjs`, copied into the APK assets
@@ -15,25 +24,34 @@ val copyWebApp by tasks.registering(Copy::class) {
         }
     }
 }
-tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
-    dependsOn(copyWebApp)
-}
 
 android {
     namespace = "app.logviewerlite"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "app.logviewerlite"
+        applicationId = "aero.speedbird.speedlog"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
 
+    signingConfigs {
+        if (keystoreProps.containsKey("storeFile")) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
@@ -45,7 +63,8 @@ android {
         jvmTarget = "17"
     }
 
-    sourceSets["main"].assets.srcDir(webappDir)
+    // The task as source dir: every task that reads the assets (merge, lint) depends on the copy
+    sourceSets["main"].assets.srcDir(copyWebApp)
 }
 
 dependencies {
