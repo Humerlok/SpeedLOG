@@ -1248,6 +1248,11 @@ async function open_param_file(file) {
 
 async function open_file(file) {
     if (/\.(param|parm)$/i.test(file.name)) {
+        // Parameter files only have a view in the Hardware Report, which the Android app doesn't offer
+        if (!tool_enabled('hardware')) {
+            toast(t('load.no_param'), true)
+            return
+        }
         await open_param_file(file)
         return
     }

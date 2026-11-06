@@ -2,6 +2,11 @@
 // original tools ported into the page (hardware.js / pid.js, ported from the former standalone tools). They all work on the one
 // file opened in the top bar, and the tool views are set up the first time they are opened.
 
+// The Android app bundles this same page. Hardware Report and PID Review fail on some limited devices, so the app only
+// offers the Log Viewer. window.AndroidBridge is registered by MainActivity before the page loads.
+const IS_ANDROID_APP = !!window.AndroidBridge
+const tool_enabled = name => !(IS_ANDROID_APP && (name === 'hardware' || name === 'pid'))
+
 const TOOLS = {
     hardware: { root: 'hwRoot', pane: 'toolHardware', nav: 'hwNav', empty: 'hwEmpty', api: () => window.HW },
     pid: { root: 'pidRoot', pane: 'toolPid', nav: 'pidNav', empty: 'pidEmpty', api: () => window.PID },
@@ -23,7 +28,8 @@ function set_session(kind, name, buffer, text) {
 
 function update_view_tabs() {
     const have = !!session.kind
-    $('viewTabs').hidden = !have
+    // With the tools gone only the Log Viewer is left, so the tab bar has nothing to switch
+    $('viewTabs').hidden = !have || IS_ANDROID_APP
     for (const b of document.querySelectorAll('.viewtab')) {
         b.classList.toggle('active', b.dataset.view === view)
         b.setAttribute('aria-selected', String(b.dataset.view === view))
@@ -34,6 +40,7 @@ function update_view_tabs() {
 }
 
 function show_view(name) {
+    if (name !== 'viewer' && !tool_enabled(name)) name = 'viewer'
     view = name
     const have = !!session.kind
     const viewer_ready = view === 'viewer' && !!state.log
@@ -52,6 +59,7 @@ function show_view(name) {
 }
 
 async function run_tool(name) {
+    if (!tool_enabled(name)) return
     const tool = TOOLS[name]
     const ts = tool_state[name]
     const root = $(tool.root)
@@ -447,6 +455,11 @@ function update_chrome_vars() {
 }
 
 function views_setup() {
+    if (IS_ANDROID_APP) {
+        for (const b of document.querySelectorAll('.viewtab')) b.hidden = !tool_enabled(b.dataset.view)
+        const note = document.querySelector('[data-i18n-html="welcome.param"]')
+        if (note) note.hidden = true
+    }
     for (const b of document.querySelectorAll('.viewtab')) {
         b.addEventListener('click', () => show_view(b.dataset.view))
     }
