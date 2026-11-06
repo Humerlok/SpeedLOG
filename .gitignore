@@ -6,6 +6,9 @@ backup/
 # Single-file build and APK copies
 dist/
 
+# Generated PWA deployment folder
+site/
+
 # Android build output (android/.gitignore covers the rest)
 android/app/build/
 android/build/
