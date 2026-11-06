@@ -26,3 +26,6 @@ android/keystore.properties
 *.keystore
 
 
+
+# Vendored third-party builds in modules/ (the dist/ rule above must not hide them)
+!modules/**/dist/
