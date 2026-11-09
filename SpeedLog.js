@@ -283,15 +283,16 @@ function lower_bound(x, v) {
     return lo
 }
 
+// First/last raw index spanning the visible x range, shared by the reduced plot points and the stats readout
+function visible_bounds(x, range) {
+    const n = x.length
+    if (!range) return [0, n]
+    return [Math.max(0, lower_bound(x, range[0]) - 1), Math.min(n, lower_bound(x, range[1]) + 1)]
+}
+
 // Visible window of a series, reduced to min/max per bucket so big logs stay fast
 function view_slice(s, range) {
-    const n = s.x.length
-    let lo = 0
-    let hi = n
-    if (range) {
-        lo = Math.max(0, lower_bound(s.x, range[0]) - 1)
-        hi = Math.min(n, lower_bound(s.x, range[1]) + 1)
-    }
+    const [lo, hi] = visible_bounds(s.x, range)
     const len = hi - lo
     if (len <= BUCKETS * 3) {
         return { x: Array.from(s.x.subarray(lo, hi)), y: Array.from(s.y.subarray(lo, hi)) }
@@ -321,6 +322,25 @@ function view_slice(s, range) {
         }
     }
     return { x, y }
+}
+
+// Min/max/mean over the visible window, from the raw series (not view_slice's bucketed points,
+// whose mean would be skewed toward the extremes it keeps)
+function series_stats(s, range) {
+    const [lo, hi] = visible_bounds(s.x, range)
+    let min = Infinity
+    let max = -Infinity
+    let sum = 0
+    let count = 0
+    for (let i = lo; i < hi; i++) {
+        const v = s.y[i]
+        if (!Number.isFinite(v)) continue
+        if (v < min) min = v
+        if (v > max) max = v
+        sum += v
+        count++
+    }
+    return count ? { min, max, mean: sum / count } : null
 }
 
 function estimate_span() {
@@ -573,9 +593,12 @@ function add_panel() {
     p.title = el('div', { class: 'panel-title' }, el('span', { class: 'pt-label' }), el('span', { class: 'pt-num', text: String(p.id) }))
     p.hint = el('div', { class: 'hint' }, el('span', { class: 'hint-text' }), el('button', { class: 'btn primary hint-btn', type: 'button', onclick: () => set_side(true, true) }))
     p.chips = chips
+    p.stats = el('div', { class: 'trace-stats' })
+    p.stats.hidden = true
     p.plot = el('div', { class: 'plotbox' })
     p.el = el('section', { class: 'panel empty' },
         el('div', { class: 'panel-head' }, p.title, chips, el('div', { class: 'panel-actions' }, p.png_btn, p.clear_btn, p.max_btn, p.more_btn, p.remove_btn)),
+        p.stats,
         p.plot,
         p.hint)
     relabel_panel(p)
@@ -798,6 +821,24 @@ function update_chips(p) {
     }
 }
 
+// Min/max/mean of each trace over the current zoom window, refreshed on every render_panel so it tracks pan/zoom
+function render_stats(p) {
+    p.stats.textContent = ''
+    p.stats.hidden = !p.traces.length
+    for (const tr of p.traces) {
+        const s = load_series(tr.type, tr.field)
+        const st = s && series_stats(s, state.xrange)
+        if (!st) continue
+        const dot = el('span', { class: 'dot' })
+        if (DASHES[tr.slot]) dot.dataset.dash = DASHES[tr.slot]
+        const vals = t('plot.stat_min') + ' ' + fmt_param(st.min) + '  ' +
+            t('plot.stat_max') + ' ' + fmt_param(st.max) + '  ' +
+            t('plot.stat_mean') + ' ' + fmt_param(st.mean) + (tr.unit ? ' ' + tr.unit : '')
+        p.stats.append(el('span', { class: 'stat-item', style: '--c: var(--series-' + (tr.slot + 1) + ')' },
+            dot, el('b', { text: tr.key }), el('span', { class: 'stat-vals', text: vals })))
+    }
+}
+
 // from_tree: the field was ticked in the sidebar; on a screen where the sidebar is a drawer the toast says where it went
 function toggle_trace(type, field, panel, from_tree) {
     const p = panel || state.active
@@ -933,6 +974,7 @@ function build_traces(p) {
 
 function render_panel(p) {
     p.el.classList.toggle('empty', !p.traces.length)
+    render_stats(p)
     if (!p.traces.length) {
         if (p.attached) Plotly.purge(p.plot)
         p.attached = false
