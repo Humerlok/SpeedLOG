@@ -24,6 +24,10 @@ val copyWebApp by tasks.registering(Copy::class) {
         }
     }
 }
+// Everything that reads the assets (merge, lint) must run after the copy, or the APK keeps an old page
+tasks.configureEach {
+    if (name.endsWith("Assets") || name.contains("lint", ignoreCase = true)) dependsOn(copyWebApp)
+}
 
 android {
     namespace = "app.logviewerlite"
@@ -63,8 +67,7 @@ android {
         jvmTarget = "17"
     }
 
-    // The task as source dir: every task that reads the assets (merge, lint) depends on the copy
-    sourceSets["main"].assets.srcDir(copyWebApp)
+    sourceSets["main"].assets.srcDir(webappDir)
 }
 
 dependencies {
