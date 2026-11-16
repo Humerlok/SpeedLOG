@@ -86,7 +86,7 @@ gradle assembleDebug                # first run: gradle wrapper --gradle-version
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The Gradle build copies `dist/SpeedLog.html` into the APK assets and fails with a clear message if you forgot to run `build.cjs`. Rebuild the web app, then the APK, after changing any web file. The application id is `aero.speedbird.speedlog` (the Kotlin package is still `app.logviewerlite`, which is independent of it). Changing the id later makes an installed copy impossible to update: the user would have to uninstall it first.
+The Gradle build copies `dist/SpeedLog.html` into the APK assets and fails with a clear message if you forgot to run `build.cjs`. Rebuild the web app, then the APK, after changing any web file. The application id is `speed.log` (the Kotlin package is still `app.logviewerlite`, which is independent of it). Changing the id later makes an installed copy impossible to update: the user would have to uninstall it first.
 
 ### Release builds (Play Store and team APK)
 
