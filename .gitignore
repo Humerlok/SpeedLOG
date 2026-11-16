@@ -29,3 +29,6 @@ android/keystore.properties
 
 # Vendored third-party builds in modules/ (the dist/ rule above must not hide them)
 !modules/**/dist/
+
+# Delivery folder: release builds (AAB for Play, APK for the team) and notes
+release/

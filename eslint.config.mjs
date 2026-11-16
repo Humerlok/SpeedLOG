@@ -153,6 +153,7 @@ export default [
       'site/**',
       'android/**/build/**',
       'descriptions.js',
+      'licenses.js',
       'markup.js',
       'hardware.js',
       'pid.js'

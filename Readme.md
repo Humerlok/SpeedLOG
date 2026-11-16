@@ -23,7 +23,8 @@ Everything runs in the browser. Nothing is uploaded and nothing is loaded from t
 - Under each field, and next to each message type, the sidebar shows what it means (from the ArduPilot documentation). Search also looks in these descriptions, so typing `altitude` finds the altitude fields.
 - **Parameters** shows each parameter's description, range and units, and what its current value means (the option name, or the active bits of a bitmask). The descriptions follow the vehicle the log came from.
 - In **Messages**, `ERR` and `EV` rows are decoded: subsystem and error code, or the event name, instead of bare numbers.
-- The **EN / PT** button in the top bar switches the whole app between English and Brazilian Portuguese. The choice is remembered, and the first run follows the browser language. Message and field descriptions are translated; parameter descriptions are in English only.
+- **About and licenses** (top-bar menu) shows the license (GPL-3.0), the link to the source code, the bundled components and the full license texts.
+- The **EN / PT** button in the top bar switches the whole app between English and Brazilian Portuguese. The choice is remembered; the first run is always in English. Message and field descriptions are translated; parameter descriptions are in English only.
 
 ### Hardware Report and PID Review
 
@@ -72,7 +73,7 @@ The parser is an ES module, which browsers refuse to load from `file://`. That i
 
 `android/` is a small Android project that bundles the single-file build in a WebView, so the app is the same UI and works offline. It asks for no permissions at all (not even `INTERNET`; the only entry in the manifest is the internal signature-level one AndroidX adds itself): the page is served from the APK itself and logs are picked with the system file picker. Saved images go through the system "create document" dialog.
 
-Requirements: Android Studio (it brings JDK 17 and Gradle), or JDK 17, Gradle 8.7+ and the Android SDK (platform 34) for the command line. Android 8.0 (API 26) or newer.
+Requirements: Android Studio (it brings JDK 17 and Gradle), or JDK 17, Gradle 8.11.1+ (8.14 is used) and the Android SDK (platform 36) for the command line. Android 8.0 (API 26) or newer.
 
 ```
 node build.cjs        # the APK bundles dist/SpeedLog.html
@@ -87,9 +88,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 The Gradle build copies `dist/SpeedLog.html` into the APK assets and fails with a clear message if you forgot to run `build.cjs`. Rebuild the web app, then the APK, after changing any web file. The application id is `aero.speedbird.speedlog` (the Kotlin package is still `app.logviewerlite`, which is independent of it). Changing the id later makes an installed copy impossible to update: the user would have to uninstall it first.
 
-### Release APK (for end users)
+### Release builds (Play Store and team APK)
 
-`gradle assembleRelease` produces `app/build/outputs/apk/release/app-release.apk`, signed with the release key. Android refuses unsigned APKs, and every update must be signed with the same key, so keep the keystore and its password safe (a backup outside the machine): if they are lost, users have to uninstall before they can install a new version.
+`gradle assembleRelease bundleRelease` produces `app/build/outputs/apk/release/app-release.apk` (to install directly) and `app/build/outputs/bundle/release/app-release.aab` (the file Google Play Console takes), both signed with the release key. The files to hand out are collected in `release/` (git-ignored): `SpeedLog-<version>.aab` for the Play Console, `SpeedLog-<version>.apk` for the team, and `LEIA-ME.txt` with the install steps. The app targets Android 16 (API 36) and runs on Android 8.0 or newer; it is drawn edge to edge, with the page kept clear of the system bars. Android refuses unsigned APKs, and every update must be signed with the same key, so keep the keystore and its password safe (a backup outside the machine): if they are lost, users have to uninstall before they can install a new version.
 
 The signing data is read from `android/keystore.properties` (git-ignored, like `*.jks`): `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. The key used so far is `~/.speedlog-signing/speedlog-release.jks` (alias `speedlog`, valid for 10000 days). Without that file the release build is left unsigned. Raise `versionCode` (and `versionName`) in `app/build.gradle.kts` for each version you hand out, otherwise Android will not accept it as an update. The APK is copied to `dist/SpeedLog-<versionName>.apk` by hand; `dist/` is git-ignored.
 
@@ -120,3 +121,7 @@ Setup is only `npm ci` (Node 22.13 or newer), and only for the linter: `npm run 
 - `Libraries/`: shared helpers (`LogHelpers.js` for vehicle/board info and message types, math, FFT and Plotly helpers, device-ID decoding, parameter helpers).
 - `modules/`: the third-party libraries, vendored as the single built file the app loads (Plotly, fft.js, Popper, tippy.js, the DataFlash parser). See `modules/Readme.md`.
 - `images/`: the icon the tool views use and the app icons (PWA). `manifest.webmanifest` and `sw.js` are the PWA files; `build.cjs` copies them to `site/`.
+
+## License
+
+Speed Log is free software under the **GNU General Public License v3.0** (see `LICENSE`). It includes code derived from the ArduPilot WebTools (Hardware Report, PID Review) and the JsDataflashParser, both GPL-3.0, and the MIT-licensed libraries Plotly.js, fft.js, Popper and tippy.js; the About sheet in the app lists them with the license texts. Anyone who receives the app, free or paid, must be able to get the source code (https://github.com/Humerlok/SpeedLOG) and keeps the rights the GPL gives. Speed Log is an independent tool, not made or endorsed by the ArduPilot project. When a library is added or replaced in `modules/`, update `COMPONENTS` in `chrome.js` and, if `LICENSE` changed, run `node tools/build_licenses.cjs`.

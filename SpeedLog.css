@@ -558,6 +558,17 @@ body:has(#readout:not([hidden])) .toast { bottom: calc(52px + var(--safe-b)); }
 dl.details { margin: 0; padding: 4px 16px calc(16px + var(--safe-b)); display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; align-items: baseline; }
 dl.details dt { font-size: 13px; color: var(--text-secondary); }
 dl.details dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.about-sheet { width: min(560px, 100%); }
+.about { padding: 4px 16px calc(16px + var(--safe-b)); display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.45; }
+.about p { margin: 0; color: var(--text-secondary); }
+.about .about-name { color: var(--text-primary); }
+.about h3 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.02em; color: var(--text-primary); }
+.about a { color: var(--accent); overflow-wrap: anywhere; }
+.about-sec { display: flex; flex-direction: column; gap: 6px; }
+.about-list { margin: 0; padding-left: 18px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+.about-list b { color: var(--text-primary); font-weight: 600; }
+.about-license summary { cursor: pointer; padding: 6px 0; color: var(--accent); }
+.about-license pre { margin: 4px 0 8px; padding: 10px; max-height: 260px; overflow: auto; background: var(--surface-2); border-radius: 8px; font-size: 11px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-secondary); }
 dl.shortcuts { align-items: center; }
 dl.shortcuts dt { white-space: nowrap; }
 dl.shortcuts dt kbd + kbd { margin-left: 4px; }

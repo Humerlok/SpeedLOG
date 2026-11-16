@@ -404,6 +404,42 @@ function render_help_sheet() {
     }
 }
 
+// About sheet: what the app is, its license and the source offer (GPL-3.0), and the components it contains
+const SOURCE_URL = 'https://github.com/Humerlok/SpeedLOG'
+const COMPONENTS = [
+    // [name, license, holder / origin, url]
+    ['Plotly.js 2.32.0', 'MIT', 'Plotly, Inc.', 'https://github.com/plotly/plotly.js'],
+    ['fft.js 4.0.4', 'MIT', 'Fedor Indutny', 'https://github.com/indutny/fft.js'],
+    ['Popper 2.11.8', 'MIT', 'Federico Zivolo and contributors', 'https://github.com/floating-ui/floating-ui'],
+    ['tippy.js', 'MIT', 'atomiks', 'https://github.com/atomiks/tippyjs'],
+    ['JsDataflashParser', 'GPL-3.0', 'Willian Galvani', 'https://github.com/Williangalvani/JsDataflashParser'],
+    ['ArduPilot WebTools', 'GPL-3.0', 'ArduPilot project (Hardware Report, PID Review)', 'https://github.com/ArduPilot/WebTools'],
+]
+
+function render_about_sheet() {
+    const box = $('aboutBody')
+    box.textContent = ''
+    const link = (url, text) => el('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: text || url })
+    const section = (title, ...kids) => el('section', { class: 'about-sec' }, el('h3', { text: title }), ...kids)
+    const license_text = (title, text) => el('details', { class: 'about-license' }, el('summary', { text: title }), el('pre', { text }))
+
+    box.append(
+        el('p', { class: 'about-name' }, el('b', { text: 'Speed Log' }), ' - ', el('span', { text: t('about.tagline') })),
+        el('p', { text: t('about.privacy') }),
+        section(t('about.license_h'),
+            el('p', { text: t('about.license') }),
+            el('p', {}, t('about.source') + ' ', link(SOURCE_URL))),
+        section(t('about.independent_h'), el('p', { text: t('about.independent') })),
+        section(t('about.components_h'),
+            el('p', { text: t('about.components') }),
+            el('ul', { class: 'about-list' }, ...COMPONENTS.map(([name, lic, who, url]) =>
+                el('li', {}, el('b', { text: name }), ' (' + lic + '), ' + who + ' ', link(url)))),
+            el('p', { text: t('about.descriptions') })),
+        section(t('about.texts_h'),
+            license_text(t('about.gpl'), (window.LICENSE_TEXTS || {}).gpl || ''),
+            license_text(t('about.mit'), (window.LICENSE_TEXTS || {}).mit || '')))
+}
+
 // Tooltips of the buttons that have a shortcut name it (not on a touch screen, which has no keyboard)
 function decorate_titles() {
     if (TOUCH) return
@@ -419,6 +455,7 @@ function update_chrome_text() {
     $('menuLang').textContent = t('top.lang_to', { name: next })
     update_theme_button()
     render_help_sheet()
+    render_about_sheet()
     render_file_sheet()
     show_file_info()
     decorate_titles()
@@ -470,6 +507,10 @@ function chrome_setup() {
     $('menuHelp').addEventListener('click', () => {
         hide_menu()
         open_sheet('helpSheet')
+    })
+    $('menuAbout').addEventListener('click', () => {
+        hide_menu()
+        open_sheet('aboutSheet')
     })
     $('menuLang').addEventListener('click', () => {
         hide_menu()

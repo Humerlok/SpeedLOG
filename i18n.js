@@ -195,6 +195,20 @@ const STR = {
         'help.focus': 'Focus mode',
         'help.search': 'Search fields',
         'help.help': 'This list',
+        'about.title': 'About and licenses',
+        'about.tagline': 'Offline viewer for ArduPilot DataFlash logs.',
+        'about.privacy': 'Everything runs on your device. Logs are never uploaded, and the app does not use the network.',
+        'about.license_h': 'License',
+        'about.license': 'Speed Log is free software under the GNU General Public License, version 3 (GPL-3.0). You may use, study, share and modify it under the terms of that license, which comes with no warranty.',
+        'about.source': 'Source code:',
+        'about.independent_h': 'Independent tool',
+        'about.independent': 'Speed Log is not made, endorsed or supported by the ArduPilot project. ArduPilot is a trademark of its owners.',
+        'about.components_h': 'Components',
+        'about.components': 'Speed Log includes these projects, each under its own license:',
+        'about.descriptions': 'The message and parameter descriptions come from the data published by the ArduPilot project (log message definitions and parameter definitions).',
+        'about.texts_h': 'License texts',
+        'about.gpl': 'GNU General Public License v3.0',
+        'about.mit': 'MIT License (Plotly.js, fft.js, Popper, tippy.js)',
     },
     pt: {
         'app.title': 'Speed Log',
@@ -386,6 +400,20 @@ const STR = {
         'help.focus': 'Modo foco',
         'help.search': 'Buscar campos',
         'help.help': 'Esta lista',
+        'about.title': 'Sobre e licenças',
+        'about.tagline': 'Visualizador offline de logs DataFlash do ArduPilot.',
+        'about.privacy': 'Tudo roda no seu dispositivo. Os logs nunca são enviados e o app não usa a rede.',
+        'about.license_h': 'Licença',
+        'about.license': 'O Speed Log é software livre sob a Licença Pública Geral GNU, versão 3 (GPL-3.0). Você pode usar, estudar, compartilhar e modificar o programa nos termos dessa licença, que não traz garantia.',
+        'about.source': 'Código-fonte:',
+        'about.independent_h': 'Ferramenta independente',
+        'about.independent': 'O Speed Log não é feito, endossado nem mantido pelo projeto ArduPilot. ArduPilot é marca de seus proprietários.',
+        'about.components_h': 'Componentes',
+        'about.components': 'O Speed Log inclui estes projetos, cada um com a sua licença:',
+        'about.descriptions': 'As descrições de mensagens e parâmetros vêm dos dados publicados pelo projeto ArduPilot (definições das mensagens de log e dos parâmetros).',
+        'about.texts_h': 'Textos das licenças',
+        'about.gpl': 'Licença Pública Geral GNU v3.0',
+        'about.mit': 'Licença MIT (Plotly.js, fft.js, Popper, tippy.js)',
     },
 }
 
@@ -404,7 +432,7 @@ function detect_lang() {
         const saved = localStorage.getItem(LANG_KEY)
         if (saved === 'en' || saved === 'pt') return saved
     } catch { /* storage may be blocked */ }
-    return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'en'
+    return 'en' // English until the user picks Portuguese; the browser language is not used
 }
 
 // Translates the static markup: data-i18n (text), data-i18n-html, data-i18n-title, data-i18n-placeholder, data-i18n-aria

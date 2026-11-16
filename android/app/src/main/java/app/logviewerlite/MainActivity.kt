@@ -1,6 +1,9 @@
 package app.logviewerlite
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -11,9 +14,13 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewFeature
@@ -25,6 +32,7 @@ import androidx.webkit.WebViewFeature
 class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
+    private lateinit var frame: FrameLayout
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPng: ByteArray? = null
 
@@ -70,7 +78,19 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         web = WebView(this)
-        setContentView(web)
+        // Android 15+ draws the app edge to edge: the frame keeps the page clear of the status bar, the navigation
+        // bar and the display cutout, and shows the page's own colour behind them (see Bridge.setSystemBars)
+        frame = FrameLayout(this)
+        frame.setBackgroundColor(if (isNight()) Color.parseColor("#1A1A19") else Color.parseColor("#FCFCFB"))
+        frame.addView(web, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        setContentView(frame)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(frame) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
+        setBarIcons(!isNight())
 
         with(web.settings) {
             javaScriptEnabled = true
@@ -89,9 +109,19 @@ class MainActivity : AppCompatActivity() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 assets.shouldInterceptRequest(request.url)
 
-            // Nothing outside the bundled page is ever opened
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                request.url.host != ASSET_HOST
+            // Nothing outside the bundled page is loaded in the WebView. A tapped web link (the source code and
+            // project links of the About sheet) goes to the system browser, which is the user's own action
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                if (request.url.host == ASSET_HOST) return false
+                if (request.url.scheme == "https" || request.url.scheme == "http") {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, request.url))
+                    } catch (e: ActivityNotFoundException) {
+                        // no browser installed: nothing to do
+                    }
+                }
+                return true
+            }
         }
 
         web.webChromeClient = object : WebChromeClient() {
@@ -118,10 +148,33 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun isNight() =
+        (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+
+    private fun setBarIcons(darkIcons: Boolean) {
+        val controller = WindowCompat.getInsetsController(window, frame)
+        controller.isAppearanceLightStatusBars = darkIcons
+        controller.isAppearanceLightNavigationBars = darkIcons
+    }
+
     private fun toast(message: Int) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
     /** Called from the page (window.AndroidBridge) to save a plot image or a file. */
     private inner class Bridge {
+        /** The page's surface colour (#rrggbb) and whether it is the dark theme: colours the bars behind the page. */
+        @JavascriptInterface
+        fun setSystemBars(color: String, dark: Boolean) {
+            val parsed = try {
+                Color.parseColor(color)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+            runOnUiThread {
+                if (parsed != null) frame.setBackgroundColor(parsed)
+                setBarIcons(!dark)
+            }
+        }
+
         @JavascriptInterface
         fun saveFile(base64: String, name: String) {
             val bytes = try {

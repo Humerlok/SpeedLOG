@@ -25,6 +25,7 @@
 <script src="i18n.js"></script>
 <script src="i18n_tools.js"></script>
 <script src="docs.js"></script>
+<script src="licenses.js"></script>
 <script src="board_types.js"></script>
 <script src="markup.js"></script>
 <script src="hardware.js"></script>
@@ -80,6 +81,7 @@ import('./modules/JsDataflashParser/parser.js').then((mod) => {
         <button id="menuTheme" class="menu-item" role="menuitem" type="button"></button>
         <button id="menuDetails" class="menu-item" role="menuitem" type="button" data-i18n="file.details">Log details</button>
         <button id="menuHelp" class="menu-item" role="menuitem" type="button" data-i18n="help.title">Keyboard shortcuts</button>
+        <button id="menuAbout" class="menu-item" role="menuitem" type="button" data-i18n="about.title">About and licenses</button>
     </div>
     <input id="fileInput" type="file" accept=".bin,.param,.parm" hidden>
 </header>
@@ -252,6 +254,18 @@ import('./modules/JsDataflashParser/parser.js').then((mod) => {
             </button>
         </div>
         <dl id="helpList" class="details shortcuts"></dl>
+    </div>
+</div>
+<div id="aboutSheet" class="sheet-wrap" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet about-sheet" role="dialog" aria-modal="true" aria-labelledby="aboutSheetTitle">
+        <div class="sheet-head">
+            <h2 id="aboutSheetTitle" data-i18n="about.title">About and licenses</h2>
+            <button class="icon-btn" type="button" data-close data-i18n-aria="side.close" data-i18n-title="side.close" aria-label="Close" title="Close">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <div id="aboutBody" class="about"></div>
     </div>
 </div>
 

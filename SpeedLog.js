@@ -131,6 +131,8 @@ function update_theme_button() {
     $('themeBtn').setAttribute('aria-label', label)
     $('menuTheme').textContent = label
     $('themeColor').setAttribute('content', theme_colors().surface)
+    // In the Android app the system bars are drawn over the page's edges: give them the page's colour
+    if (window.AndroidBridge && window.AndroidBridge.setSystemBars) window.AndroidBridge.setSystemBars(theme_colors().surface, is_dark())
 }
 
 function theme_changed() {

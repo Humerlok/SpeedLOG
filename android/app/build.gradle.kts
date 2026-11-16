@@ -31,14 +31,14 @@ tasks.configureEach {
 
 android {
     namespace = "app.logviewerlite"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "aero.speedbird.speedlog"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 3
-        versionName = "1.2"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "1.3"
     }
 
     signingConfigs {
